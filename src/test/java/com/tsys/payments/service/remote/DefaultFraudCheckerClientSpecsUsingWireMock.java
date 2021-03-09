@@ -116,6 +116,7 @@ public class DefaultFraudCheckerClientSpecsUsingWireMock {
     givenThat(get(urlEqualTo("/ping"))
             .willReturn(aResponse()
                     .withHeader("Content-Type", "text/plain")
+                    .withStatus(200)
                     .withBody(responseBody)));
 
     // When-Then
@@ -127,6 +128,7 @@ public class DefaultFraudCheckerClientSpecsUsingWireMock {
     givenThat(post(urlEqualTo("/check"))
             .willReturn(aResponse()
                     .withHeader("Content-Type", "application/json")
+                    .withStatus(200)
                     .withBody("{\n" +
                             "    \"cvvStatus\": \"pass\",\n" +
                             "    \"avStatus\": \"pass\",\n" +
@@ -163,6 +165,7 @@ public class DefaultFraudCheckerClientSpecsUsingWireMock {
     givenThat(post(urlEqualTo("/check"))
             .willReturn(aResponse()
                     .withHeader("Content-Type", "application/json")
+                    .withStatus(200)
                     .withBody("{\n" +
                             "    \"cvvStatus\": \"pass\",\n" +
                             "    \"avStatus\": \"incorrect address\",\n" +
@@ -178,7 +181,7 @@ public class DefaultFraudCheckerClientSpecsUsingWireMock {
 
   @Test
   public void shoutsWhenFraudCheckerServiceFails() {
-    stubFor(post(urlEqualTo("/check"))
+    givenThat(post(urlEqualTo("/check"))
             .willReturn(aResponse()
                     .withStatus(500)
                     .withBody("{ \"error\" : \"Internal Server Error\" }")));
