@@ -5,11 +5,11 @@ import com.tsys.payments.domain.Order;
 
 public class PaymentPayload {
 
-  public final Order order;
-  public final CreditCard creditCard;
+    public final Order order;
+    public final CreditCard creditCard;
 
-  public PaymentPayload(Order order, CreditCard creditCard) {
-    this.order = order;
-    this.creditCard = creditCard;
-  }
+    public PaymentPayload(Order order, CreditCard creditCard) {
+        this.order = order;
+        this.creditCard = creditCard;
+    }
 }

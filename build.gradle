@@ -1,11 +1,11 @@
 plugins {
-	id 'org.springframework.boot' version '2.4.0-M3'
-	//	id 'io.spring.dependency-management' version '1.0.10.RELEASE'
-	id "io.spring.dependency-management" version "1.0.11.RELEASE"
-	id "org.flywaydb.flyway" version "6.5.3"
-	id 'java'
-	id 'idea'
-	id 'eclipse'
+    id 'org.springframework.boot' version '2.4.0-M3'
+    //	id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+    id "io.spring.dependency-management" version "1.0.11.RELEASE"
+    id "org.flywaydb.flyway" version "6.5.3"
+    id 'java'
+    id 'idea'
+    id 'eclipse'
 }
 
 group = 'com.tsys'
@@ -13,35 +13,35 @@ version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '11'
 
 repositories {
-	mavenCentral()
-	maven { url 'https://repo.spring.io/milestone' }
+    mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	implementation 'org.springframework.retry:spring-retry:1.2.5.RELEASE'
-	implementation 'org.springframework:spring-aspects:5.2.8.RELEASE'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'mysql:mysql-connector-java:8.0.13'
-	compile 'org.flywaydb:flyway-core'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	testImplementation 'com.github.tomakehurst:wiremock:2.27.2'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'io.projectreactor:reactor-test'
-	runtimeOnly 'com.h2database:h2'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.retry:spring-retry:1.2.5.RELEASE'
+    implementation 'org.springframework:spring-aspects:5.2.8.RELEASE'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'mysql:mysql-connector-java:8.0.13'
+    compile 'org.flywaydb:flyway-core'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    testImplementation 'com.github.tomakehurst:wiremock:2.27.2'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
+    runtimeOnly 'com.h2database:h2'
 }
 
 test {
-	useJUnitPlatform()
+    useJUnitPlatform()
 }
 
 flyway {
-	url = 'jdbc:mysql://localhost:3306/payments?allowPublicKeyRetrieval=true&useSSL=false'
-	user = 'paymentsuser'
-	password = 'PaymentsPassword'
-	schemas = ['payments']
-	table = 'schema_version'
+    url = 'jdbc:mysql://localhost:3306/payments?allowPublicKeyRetrieval=true&useSSL=false'
+    user = 'paymentsuser'
+    password = 'PaymentsPassword'
+    schemas = ['payments']
+    table = 'schema_version'
 //	placeholders = [
 //			'keyABC': 'valueXYZ',
 //			'otherplaceholder': 'value123'
@@ -52,11 +52,11 @@ flyway {
 // To reload on changing a static file, we need a way to copy
 // the changed files into the classpath of the running app.
 task reload(type: Copy) {
-	from 'src/main/resources'
-	into 'build/resources/main'
-	include 'static/**'
-	include 'templates/**'
-	include 'custom/**'
+    from 'src/main/resources'
+    into 'build/resources/main'
+    include 'static/**'
+    include 'templates/**'
+    include 'custom/**'
 }
 
 // To pass arguments while running our application using Gradle
@@ -64,5 +64,5 @@ task reload(type: Copy) {
 // Usage on command line:
 // gradle bootRun -Dserver.port=10001 -DcustomArgument=custom
 bootRun {
-	systemProperties = System.properties
+    systemProperties = System.properties
 }

@@ -72,141 +72,135 @@ import static org.mockito.Mockito.mock;
 @Tag("IntegrationTest")
 public class DefaultFraudCheckerClientSpecsUsingWireMock {
 
-  @Value("${fraud-checker.service.url}")
-  private String fraudCheckerServiceUrl;
-
-  @Value("${fraud-checker.service.port}")
-  private int fraudCheckerServicePort;
-
-  private static final WireMockConfiguration OPTIONS = new WireMockConfiguration()
-          .port(8080);
+    private static final WireMockConfiguration OPTIONS = new WireMockConfiguration()
+            .port(8080);
+    private static final WireMockServer FRAUD_CHECKER_WEB_SERVICE = new WireMockServer(OPTIONS);
+    private final Money chargedAmount = new Money(Currency.getInstance("INR"), 1235.45d);
 //          .withRootDirectory("src/test/resources/wiremock");
+    private final CreditCard validCard = new CreditCard("4485-2847-2013-4093", "Jumping Jack", "Bank of Test", new Date(), 456);
+    @Value("${fraud-checker.service.url}")
+    private String fraudCheckerServiceUrl;
+    @Value("${fraud-checker.service.port}")
+    private int fraudCheckerServicePort;
+    @Autowired
+    private DefaultFraudCheckerClient fraudCheckerClient;
 
-  private static final WireMockServer FRAUD_CHECKER_WEB_SERVICE = new WireMockServer(OPTIONS);
+    @BeforeAll
+    public static void startFraudCheckerServer() {
+        FRAUD_CHECKER_WEB_SERVICE.start();
+    }
 
-  @Autowired
-  private DefaultFraudCheckerClient fraudCheckerClient;
+    @AfterAll
+    public static void stopFraudCheckerServer() {
+        FRAUD_CHECKER_WEB_SERVICE.stop();
+    }
 
-  private final Money chargedAmount = new Money(Currency.getInstance("INR"), 1235.45d);
+    @AfterEach
+    public void resetFraudCheckerServer() {
+        // WireMock server can be reset at any time, removing all stub mappings and
+        // deleting the request log
+        // or sending a POST request with an empty body to http://<host>:<port>/__admin/reset.
+        FRAUD_CHECKER_WEB_SERVICE.resetAll();
+    }
 
-  private final CreditCard validCard = new CreditCard("4485-2847-2013-4093", "Jumping Jack", "Bank of Test", new Date(), 456);
+    @Test
+    public void pingsFraudCheckerService() {
+        assertNotNull(fraudCheckerClient);
+        final String responseBody = "{ \"pong\" : \"I'm Alive!\"}";
+        givenThat(get(urlEqualTo("/ping"))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "text/plain")
+                        .withStatus(200)
+                        .withBody(responseBody)));
 
-  @BeforeAll
-  public static void startFraudCheckerServer() {
-    FRAUD_CHECKER_WEB_SERVICE.start();
-  }
+        // When-Then
+        assertThat(fraudCheckerClient.ping(), is(responseBody));
+    }
 
-  @AfterEach
-  public void resetFraudCheckerServer() {
-    // WireMock server can be reset at any time, removing all stub mappings and
-    // deleting the request log
-    // or sending a POST request with an empty body to http://<host>:<port>/__admin/reset.
-    FRAUD_CHECKER_WEB_SERVICE.resetAll();
-  }
+    @Test
+    public void checksForFraudulentCreditCardTransactionAndMarksItPass() {
+        givenThat(post(urlEqualTo("/check"))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withStatus(200)
+                        .withBody("{\n" +
+                                "    \"cvvStatus\": \"pass\",\n" +
+                                "    \"avStatus\": \"pass\",\n" +
+                                "    \"overall\": \"pass\"\n" +
+                                "}")));
 
-  @AfterAll
-  public static void stopFraudCheckerServer() {
-    FRAUD_CHECKER_WEB_SERVICE.stop();
-  }
+        // When
+        final FraudStatus status = fraudCheckerClient.checkFraud(validCard, chargedAmount);
 
-  @Test
-  public void pingsFraudCheckerService() {
-    assertNotNull(fraudCheckerClient);
-    final String responseBody = "{ \"pong\" : \"I'm Alive!\"}";
-    givenThat(get(urlEqualTo("/ping"))
-            .willReturn(aResponse()
-                    .withHeader("Content-Type", "text/plain")
-                    .withStatus(200)
-                    .withBody(responseBody)));
+        // Then
+        assertThat(status.overall, is("pass"));
+    }
 
-    // When-Then
-    assertThat(fraudCheckerClient.ping(), is(responseBody));
-  }
+    @Test
+    public void checksForFraudulentCreditCardTransactionAndMarksItFail() {
+        givenThat(post(urlEqualTo("/check"))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\n" +
+                                "    \"cvvStatus\": \"fail\",\n" +
+                                "    \"avStatus\": \"pass\",\n" +
+                                "    \"overall\": \"fail\"\n" +
+                                "}")));
 
-  @Test
-  public void checksForFraudulentCreditCardTransactionAndMarksItPass() {
-    givenThat(post(urlEqualTo("/check"))
-            .willReturn(aResponse()
-                    .withHeader("Content-Type", "application/json")
-                    .withStatus(200)
-                    .withBody("{\n" +
-                            "    \"cvvStatus\": \"pass\",\n" +
-                            "    \"avStatus\": \"pass\",\n" +
-                            "    \"overall\": \"pass\"\n" +
-                            "}")));
+        // When
+        final FraudStatus status = fraudCheckerClient.checkFraud(validCard, chargedAmount);
 
-    // When
-    final FraudStatus status = fraudCheckerClient.checkFraud(validCard, chargedAmount);
+        // Then
+        assertThat(status.overall, is("fail"));
+    }
 
-    // Then
-    assertThat(status.overall, is("pass"));
-  }
+    @Test
+    public void checksForFraudulentCreditCardTransactionAndMarksItSuspicious() {
+        givenThat(post(urlEqualTo("/check"))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withStatus(200)
+                        .withBody("{\n" +
+                                "    \"cvvStatus\": \"pass\",\n" +
+                                "    \"avStatus\": \"incorrect address\",\n" +
+                                "    \"overall\": \"suspicious\"\n" +
+                                "}")));
 
-  @Test
-  public void checksForFraudulentCreditCardTransactionAndMarksItFail() {
-    givenThat(post(urlEqualTo("/check"))
-            .willReturn(aResponse()
-                    .withHeader("Content-Type", "application/json")
-                    .withBody("{\n" +
-                            "    \"cvvStatus\": \"fail\",\n" +
-                            "    \"avStatus\": \"pass\",\n" +
-                            "    \"overall\": \"fail\"\n" +
-                            "}")));
+        // When
+        final FraudStatus status = fraudCheckerClient.checkFraud(validCard, chargedAmount);
 
-    // When
-    final FraudStatus status = fraudCheckerClient.checkFraud(validCard, chargedAmount);
+        // Then
+        assertThat(status.overall, is("suspicious"));
+    }
 
-    // Then
-    assertThat(status.overall, is("fail"));
-  }
+    @Test
+    public void shoutsWhenFraudCheckerServiceFails() {
+        givenThat(post(urlEqualTo("/check"))
+                .willReturn(aResponse()
+                        .withStatus(500)
+                        .withBody("{ \"error\" : \"Internal Server Error\" }")));
 
-  @Test
-  public void checksForFraudulentCreditCardTransactionAndMarksItSuspicious() {
-    givenThat(post(urlEqualTo("/check"))
-            .willReturn(aResponse()
-                    .withHeader("Content-Type", "application/json")
-                    .withStatus(200)
-                    .withBody("{\n" +
-                            "    \"cvvStatus\": \"pass\",\n" +
-                            "    \"avStatus\": \"incorrect address\",\n" +
-                            "    \"overall\": \"suspicious\"\n" +
-                            "}")));
+        // When
+        assertThrows(HttpServerErrorException.class, () ->
+                fraudCheckerClient.checkFraud(validCard, chargedAmount));
+    }
 
-    // When
-    final FraudStatus status = fraudCheckerClient.checkFraud(validCard, chargedAmount);
+    @Test
+    public void shoutsWhenFraudCheckerServiceIsUnreachable() {
+        final RestTemplate restTemplate = mock(RestTemplate.class);
+        final URI fraudCheckUri = URI.create(fraudCheckerServiceUrl + "/ping");
 
-    // Then
-    assertThat(status.overall, is("suspicious"));
-  }
+        given(restTemplate.getForObject(fraudCheckUri, String.class))
+                .willThrow(new RestClientException("Unreachable!"));
 
-  @Test
-  public void shoutsWhenFraudCheckerServiceFails() {
-    givenThat(post(urlEqualTo("/check"))
-            .willReturn(aResponse()
-                    .withStatus(500)
-                    .withBody("{ \"error\" : \"Internal Server Error\" }")));
+        final DefaultFraudCheckerClient fraudChecker = new DefaultFraudCheckerClient(fraudCheckerServiceUrl, fraudCheckerServicePort, restTemplate) {
+            @Override
+            URI createFraudCheckUri(String path) {
+                return fraudCheckUri;
+            }
+        };
 
-    // When
-    assertThrows(HttpServerErrorException.class, () ->
-            fraudCheckerClient.checkFraud(validCard, chargedAmount));
-  }
-
-  @Test
-  public void shoutsWhenFraudCheckerServiceIsUnreachable() {
-    final RestTemplate restTemplate = mock(RestTemplate.class);
-    final URI fraudCheckUri = URI.create(fraudCheckerServiceUrl + "/ping");
-
-    given(restTemplate.getForObject(fraudCheckUri, String.class))
-            .willThrow(new RestClientException("Unreachable!"));
-
-    final DefaultFraudCheckerClient fraudChecker = new DefaultFraudCheckerClient(fraudCheckerServiceUrl, fraudCheckerServicePort, restTemplate) {
-      @Override
-      URI createFraudCheckUri(String path) {
-        return fraudCheckUri;
-      }
-    };
-
-    // When-Then
-    assertThrows(RestClientException.class, () -> fraudChecker.ping());
-  }
+        // When-Then
+        assertThrows(RestClientException.class, () -> fraudChecker.ping());
+    }
 }

@@ -18,37 +18,37 @@ import java.util.logging.Logger;
 @Service
 public class PaymentsService {
 
-  private static final Logger LOG = Logger.getLogger(PaymentsService.class.getName());
+    private static final Logger LOG = Logger.getLogger(PaymentsService.class.getName());
 
-  private final FraudCheckerClient fraudCheckerClient;
+    private final FraudCheckerClient fraudCheckerClient;
 
-  private final TransactionRepository transactionRepository;
+    private final TransactionRepository transactionRepository;
 
-  @Autowired
-  //  @Qualifier("fraud_checker_cb")
-  //  @Qualifier("fraud_checker_retry")
-  public PaymentsService(FraudCheckerClient fraudCheckerClient, TransactionRepository transactionRepository) {
-    this.fraudCheckerClient = fraudCheckerClient;
-    this.transactionRepository = transactionRepository;
-  }
+    @Autowired
+    //  @Qualifier("fraud_checker_cb")
+    //  @Qualifier("fraud_checker_retry")
+    public PaymentsService(FraudCheckerClient fraudCheckerClient, TransactionRepository transactionRepository) {
+        this.fraudCheckerClient = fraudCheckerClient;
+        this.transactionRepository = transactionRepository;
+    }
 
-  public Optional<TransactionReference> makePayment(Order order, CreditCard creditCard) {
-    final var amount = order.amount;
-    LOG.info(() -> String.format("Order Amount = %s, Total Items = %s", order.amount, order.totalItems()));
-    final var transaction = fraudCheckerClient
-            .checkFraud(creditCard, amount)
-            .makeTransaction(createUUID(), createTransactionDate(), order.id, amount);
+    public Optional<TransactionReference> makePayment(Order order, CreditCard creditCard) {
+        final var amount = order.amount;
+        LOG.info(() -> String.format("Order Amount = %s, Total Items = %s", order.amount, order.totalItems()));
+        final var transaction = fraudCheckerClient
+                .checkFraud(creditCard, amount)
+                .makeTransaction(createUUID(), createTransactionDate(), order.id, amount);
 
-    final var transactionReference = transaction.map(Transaction::reference);
-    transaction.ifPresent(t -> transactionRepository.save(t));
-    return transactionReference;
-  }
+        final var transactionReference = transaction.map(Transaction::reference);
+        transaction.ifPresent(t -> transactionRepository.save(t));
+        return transactionReference;
+    }
 
-  Date createTransactionDate() {
-    return Date.from(Instant.now());
-  }
+    Date createTransactionDate() {
+        return Date.from(Instant.now());
+    }
 
-  UUID createUUID() {
-    return UUID.randomUUID();
-  }
+    UUID createUUID() {
+        return UUID.randomUUID();
+    }
 }

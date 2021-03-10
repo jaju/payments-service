@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public interface FraudCheckerClient {
-  FraudStatus checkFraud(CreditCard creditCard, Money chargedAmount);
+    FraudStatus checkFraud(CreditCard creditCard, Money chargedAmount);
 
-  FraudStatus checkFraudFallback(CreditCard creditCard, Money chargedAmount);
+    FraudStatus checkFraudFallback(CreditCard creditCard, Money chargedAmount);
 }

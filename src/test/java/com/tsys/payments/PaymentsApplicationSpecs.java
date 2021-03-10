@@ -22,25 +22,25 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 // to run the app in dev mode using H2 file database, whereas for running tests frequently
 // I want to use H2 in-memory database.
 @TestPropertySource(properties = {
-				// use memory instead of file.
-				// URL Format: "jdbc:h2:{ {.|mem:}[name] | [file:]fileName | {tcp|ssl}:[//]server[:port][,server2[:port]]/name }[;key=value...]"
-				"spring.datasource.url = jdbc:h2:mem:paymentsdb;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS PAYMENTS;"
+        // use memory instead of file.
+        // URL Format: "jdbc:h2:{ {.|mem:}[name] | [file:]fileName | {tcp|ssl}:[//]server[:port][,server2[:port]]/name }[;key=value...]"
+        "spring.datasource.url = jdbc:h2:mem:paymentsdb;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS PAYMENTS;"
 //    "spring.datasource.url = jdbc:h2:mem:PAYMENTS;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS PAYMENTS;"
 })
 @Tag("End-To-End-Test")
 public class PaymentsApplicationSpecs {
 
-	@Autowired
-	private DataSource dataSource;
+    @Autowired
+    private DataSource dataSource;
 
-	@Autowired
-	private ApplicationContext context;
+    @Autowired
+    private ApplicationContext context;
 
-	@Test
-	void contextLoads() throws SQLException {
-		assertNotNull(context);
-		assertNotNull(dataSource);
-		final String url = dataSource.getConnection().getMetaData().getURL();
-		assertThat(url, is("jdbc:h2:mem:paymentsdb"));
-	}
+    @Test
+    void contextLoads() throws SQLException {
+        assertNotNull(context);
+        assertNotNull(dataSource);
+        final String url = dataSource.getConnection().getMetaData().getURL();
+        assertThat(url, is("jdbc:h2:mem:paymentsdb"));
+    }
 }

@@ -13,22 +13,22 @@ import static org.hamcrest.Matchers.is;
 @Tag("UnitTest")
 class TransactionSpecs {
 
-  @Test
-  public void createsTransactionReference() {
-    // Given
-    final Money inr_100_253 = new Money(Currency.getInstance("INR"), 100.253);
-    final UUID id = UUID.nameUUIDFromBytes("TEST-ID".getBytes());
-    final String orderId = "TEST-ORDER-ID";
-    final Date date = new Date();
-    final String status = "accepted";
-    final var transaction = new Transaction(id, date, status, orderId, inr_100_253);
+    @Test
+    public void createsTransactionReference() {
+        // Given
+        final Money inr_100_253 = new Money(Currency.getInstance("INR"), 100.253);
+        final UUID id = UUID.nameUUIDFromBytes("TEST-ID".getBytes());
+        final String orderId = "TEST-ORDER-ID";
+        final Date date = new Date();
+        final String status = "accepted";
+        final var transaction = new Transaction(id, date, status, orderId, inr_100_253);
 
-    // When
-    final var reference = transaction.reference();
+        // When
+        final var reference = transaction.reference();
 
-    // Then
-    var expected = new TransactionReference(id, date, status);
-    assertThat(reference, is(expected));
-  }
+        // Then
+        var expected = new TransactionReference(id, date, status);
+        assertThat(reference, is(expected));
+    }
 
 }

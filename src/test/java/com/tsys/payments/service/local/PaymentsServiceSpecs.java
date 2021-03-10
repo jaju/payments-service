@@ -25,127 +25,125 @@ import static org.mockito.Mockito.verify;
 @Tag("UnitTest")
 class PaymentsServiceSpecs {
 
-  @Mock
-  private FraudCheckerClient fraudCheckerClient;
+    private final Date now = Date.from(Instant.now());
+    private final UUID uuid = UUID.nameUUIDFromBytes("TEST".getBytes());
+    private final Money amount = new Money(Currency.getInstance("INR"), 1235.45d);
+    private final CreditCard validCard = CreditCardBuilder.make()
+            .withHolder("Jumping Jack")
+            .withIssuingBank("Bank of Test")
+            .withValidNumber()
+            .withValidCVV()
+            .withFutureExpiryDate()
+            .build();
+    @Mock
+    private FraudCheckerClient fraudCheckerClient;
+    @Mock
+    private TransactionRepository transactionRepository;
+    private PaymentsService paymentsService;
 
-  @Mock
-  private TransactionRepository transactionRepository;
+    @BeforeEach
+    public void setup() {
+        paymentsService = new PaymentsService(fraudCheckerClient, transactionRepository) {
 
-  private PaymentsService paymentsService;
+            @Override
+            UUID createUUID() {
+                return uuid;
+            }
 
-  private final Date now = Date.from(Instant.now());
-  private final UUID uuid = UUID.nameUUIDFromBytes("TEST".getBytes());
-  private final Money amount = new Money(Currency.getInstance("INR"), 1235.45d);
-  private final CreditCard validCard = CreditCardBuilder.make()
-          .withHolder("Jumping Jack")
-          .withIssuingBank("Bank of Test")
-          .withValidNumber()
-          .withValidCVV()
-          .withFutureExpiryDate()
-          .build();
+            @Override
+            Date createTransactionDate() {
+                return now;
+            }
+        };
+    }
 
-  @BeforeEach
-  public void setup() {
-    paymentsService = new PaymentsService(fraudCheckerClient, transactionRepository) {
+    @Test
+    public void returnsAcceptedTransactionReferenceWhenFraudCheckPasses() {
+        // Given
+        FraudStatus pass = new FraudStatus("pass");
+        given(fraudCheckerClient.checkFraud(validCard, amount)).willReturn(pass);
 
-      @Override
-      UUID createUUID() {
-        return uuid;
-      }
+        // When
+        final Optional<TransactionReference> transactionReference = paymentsService.makePayment(new Order("TEST-ORDER-ID", List.of(
+                new Item(1L, "Dant Kanti Toothpaste", new Money(Currency.getInstance("INR"), 123.545), 10))
+        ), validCard);
 
-      @Override
-      Date createTransactionDate() {
-        return now;
-      }
-    };
-  }
-  @Test
-  public void returnsAcceptedTransactionReferenceWhenFraudCheckPasses() {
-    // Given
-    FraudStatus pass = new FraudStatus("pass");
-    given(fraudCheckerClient.checkFraud(validCard, amount)).willReturn(pass);
+        // Then
+        assertThat(transactionReference, is(Optional.of(new TransactionReference(uuid, now, "accepted"))));
+    }
 
-    // When
-    final Optional<TransactionReference> transactionReference = paymentsService.makePayment(new Order("TEST-ORDER-ID", List.of(
-            new Item(1L, "Dant Kanti Toothpaste", new Money(Currency.getInstance("INR"), 123.545), 10))
-    ), validCard);
+    @Test
+    public void returnsRejectedTransactionReferenceWhenFraudCheckFails() {
+        // Given
+        FraudStatus fail = new FraudStatus("fail");
+        given(fraudCheckerClient.checkFraud(validCard, amount)).willReturn(fail);
 
-    // Then
-    assertThat(transactionReference, is(Optional.of(new TransactionReference(uuid, now, "accepted"))));
-  }
+        // When
+        final Optional<TransactionReference> transactionReference = paymentsService.makePayment(new Order("TEST-ORDER-ID", List.of(
+                new Item(1L, "Dant Kanti Toothpaste", new Money(Currency.getInstance("INR"), 123.545), 10))
+        ), validCard);
 
-  @Test
-  public void returnsRejectedTransactionReferenceWhenFraudCheckFails() {
-    // Given
-    FraudStatus fail = new FraudStatus("fail");
-    given(fraudCheckerClient.checkFraud(validCard, amount)).willReturn(fail);
+        // Then
+        assertThat(transactionReference, is(Optional.of(new TransactionReference(uuid, now, "rejected"))));
+    }
 
-    // When
-    final Optional<TransactionReference> transactionReference = paymentsService.makePayment(new Order("TEST-ORDER-ID", List.of(
-            new Item(1L, "Dant Kanti Toothpaste", new Money(Currency.getInstance("INR"), 123.545), 10))
-    ), validCard);
+    @Test
+    public void doesNotReturnTransactionReferenceWhenFraudCheckIsSuspicious() {
+        // Given
+        FraudStatus fail = new FraudStatus("suspicious");
+        given(fraudCheckerClient.checkFraud(validCard, amount)).willReturn(fail);
 
-    // Then
-    assertThat(transactionReference, is(Optional.of(new TransactionReference(uuid, now, "rejected"))));
-  }
+        // When
+        final Optional<TransactionReference> transactionReference = paymentsService.makePayment(new Order("TEST-ORDER-ID", List.of(
+                new Item(1L, "Dant Kanti Toothpaste", new Money(Currency.getInstance("INR"), 123.545), 10))
+        ), validCard);
 
-  @Test
-  public void doesNotReturnTransactionReferenceWhenFraudCheckIsSuspicious() {
-    // Given
-    FraudStatus fail = new FraudStatus("suspicious");
-    given(fraudCheckerClient.checkFraud(validCard, amount)).willReturn(fail);
+        // Then
+        assertThat(transactionReference, is(Optional.empty()));
+    }
 
-    // When
-    final Optional<TransactionReference> transactionReference = paymentsService.makePayment(new Order("TEST-ORDER-ID", List.of(
-            new Item(1L, "Dant Kanti Toothpaste", new Money(Currency.getInstance("INR"), 123.545), 10))
-    ), validCard);
+    @Test
+    public void savesPaymentTransactionWhenFraudCheckPasses() {
+        // Given
+        FraudStatus pass = new FraudStatus("pass");
+        given(fraudCheckerClient.checkFraud(validCard, amount)).willReturn(pass);
 
-    // Then
-    assertThat(transactionReference, is(Optional.empty()));
-  }
+        // When
+        paymentsService.makePayment(new Order("TEST-ORDER-ID", List.of(
+                new Item(1L, "Dant Kanti Toothpaste", new Money(Currency.getInstance("INR"), 123.545), 10))
+        ), validCard);
 
-  @Test
-  public void savesPaymentTransactionWhenFraudCheckPasses() {
-    // Given
-    FraudStatus pass = new FraudStatus("pass");
-    given(fraudCheckerClient.checkFraud(validCard, amount)).willReturn(pass);
+        // Then
+        verify(transactionRepository).save(any(Transaction.class));
+    }
 
-    // When
-    paymentsService.makePayment(new Order("TEST-ORDER-ID", List.of(
-            new Item(1L, "Dant Kanti Toothpaste", new Money(Currency.getInstance("INR"), 123.545), 10))
-    ), validCard);
+    @Test
+    public void savesPaymentTransactionWhenFraudCheckFails() {
+        // Given
+        FraudStatus fail = new FraudStatus("fail");
+        given(fraudCheckerClient.checkFraud(validCard, amount)).willReturn(fail);
 
-    // Then
-    verify(transactionRepository).save(any(Transaction.class));
-  }
+        // When
+        paymentsService.makePayment(new Order("TEST-ORDER-ID", List.of(
+                new Item(1L, "Dant Kanti Toothpaste", new Money(Currency.getInstance("INR"), 123.545), 10))
+        ), validCard);
 
-  @Test
-  public void savesPaymentTransactionWhenFraudCheckFails() {
-    // Given
-    FraudStatus fail = new FraudStatus("fail");
-    given(fraudCheckerClient.checkFraud(validCard, amount)).willReturn(fail);
+        // Then
+        verify(transactionRepository).save(any(Transaction.class));
+    }
 
-    // When
-    paymentsService.makePayment(new Order("TEST-ORDER-ID", List.of(
-            new Item(1L, "Dant Kanti Toothpaste", new Money(Currency.getInstance("INR"), 123.545), 10))
-    ), validCard);
+    @Test
+    public void doesNotSavePaymentTransactionWhenFraudCheckIsSuspicious() {
+        // Given
+        FraudStatus fail = new FraudStatus("suspicious");
+        given(fraudCheckerClient.checkFraud(validCard, amount)).willReturn(fail);
 
-    // Then
-    verify(transactionRepository).save(any(Transaction.class));
-  }
+        // When
+        paymentsService.makePayment(new Order("TEST-ORDER-ID", List.of(
+                new Item(1L, "Dant Kanti Toothpaste", new Money(Currency.getInstance("INR"), 123.545), 10))
+        ), validCard);
 
-  @Test
-  public void doesNotSavePaymentTransactionWhenFraudCheckIsSuspicious() {
-    // Given
-    FraudStatus fail = new FraudStatus("suspicious");
-    given(fraudCheckerClient.checkFraud(validCard, amount)).willReturn(fail);
-
-    // When
-    paymentsService.makePayment(new Order("TEST-ORDER-ID", List.of(
-            new Item(1L, "Dant Kanti Toothpaste", new Money(Currency.getInstance("INR"), 123.545), 10))
-    ), validCard);
-
-    // Then
-    verify(transactionRepository, never()).save(any(Transaction.class));
-  }
+        // Then
+        verify(transactionRepository, never()).save(any(Transaction.class));
+    }
 }

@@ -42,43 +42,42 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class FraudStatus {
-  public final String overall;
+    public static final FraudStatus EMPTY = new FraudStatus("") {
+        @Override
+        public String toString() {
+            return "<<FraudStatus.EMPTY>>";
+        }
 
-  public static final FraudStatus EMPTY = new FraudStatus("") {
+        @Override
+        public Optional<Transaction> makeTransaction(UUID id, Date date, String orderId, Money value) {
+            return Optional.empty();
+        }
+    };
+    public final String overall;
+
+    @Deprecated
+    private FraudStatus() {
+        this("");
+    }
+
+    public FraudStatus(String overall) {
+        this.overall = overall;
+    }
+
     @Override
     public String toString() {
-      return "<<FraudStatus.EMPTY>>";
+        return "FraudStatus{" +
+                "overall='" + overall + '\'' +
+                '}';
     }
 
-    @Override
     public Optional<Transaction> makeTransaction(UUID id, Date date, String orderId, Money value) {
-      return Optional.empty();
+        if (overall.equals("pass"))
+            return Optional.of(new Transaction(id, date, "accepted", orderId, value));
+
+        if (overall.equals("fail"))
+            return Optional.of(new Transaction(id, date, "rejected", orderId, value));
+
+        return Optional.empty();
     }
-  };
-
-  @Deprecated
-  private FraudStatus() {
-    this("");
-  }
-
-  public FraudStatus(String overall) {
-    this.overall = overall;
-  }
-
-  @Override
-  public String toString() {
-    return "FraudStatus{" +
-            "overall='" + overall + '\'' +
-            '}';
-  }
-
-  public Optional<Transaction> makeTransaction(UUID id, Date date, String orderId, Money value) {
-    if (overall.equals("pass"))
-      return Optional.of(new Transaction(id, date,"accepted", orderId, value));
-
-    if (overall.equals("fail"))
-      return Optional.of(new Transaction(id, date,"rejected", orderId, value));
-
-    return Optional.empty();
-  }
 }
