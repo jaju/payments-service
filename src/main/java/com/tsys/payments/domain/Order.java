@@ -1,10 +1,13 @@
 package com.tsys.payments.domain;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+
 import java.util.List;
 
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class Order {
     public final String id;
-    public final List<Item> items;
+    private final List<Item> items;
     public final Money amount;
 
     public Order(String id, List<Item> items) {
