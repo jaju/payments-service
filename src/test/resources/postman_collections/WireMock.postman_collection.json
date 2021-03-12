@@ -1,0 +1,73 @@
+{
+	"info": {
+		"_postman_id": "15274b72-93a0-4f6f-b166-260607cabd8b",
+		"name": "WireMock",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Add Ping Request-Response",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n        \"request\": {\n            \"url\": \"/ping\",\n            \"method\": \"GET\"\n        },\n        \"response\": {\n        \t\"status\": 200,\n        \t\"body\": \"I'm Alive!\"\n        }\n    }"
+				},
+				"url": {
+					"raw": "{{wiremock_url}}/__admin/mappings/new",
+					"host": [
+						"{{wiremock_url}}"
+					],
+					"path": [
+						"__admin",
+						"mappings",
+						"new"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Check Ping Response",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{wiremock_url}}/ping",
+					"host": [
+						"{{wiremock_url}}"
+					],
+					"path": [
+						"ping"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Mappings",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{wiremock_url}}/__admin/mappings",
+					"host": [
+						"{{wiremock_url}}"
+					],
+					"path": [
+						"__admin",
+						"mappings"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

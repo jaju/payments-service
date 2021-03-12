@@ -1,0 +1,111 @@
+{
+	"info": {
+		"_postman_id": "32e67473-4ec8-4443-a7e2-e69ccec890e7",
+		"name": "Payments Microservice",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Payments - Ping",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{payments_url}}/ping",
+					"host": [
+						"{{payments_url}}"
+					],
+					"path": [
+						"ping"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Payments - Make Payment using Credit Card",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"order\" : {\n      \"id\" : \"10big-34cvn-23\",  \n      \"items\": [\n        { \"id\": 1, \"name\": \"Oranges\", \"price\": { \"currency\": \"INR\", \"amount\" : 14.25 }, \"quantity\":  10 },\n        { \"id\": 2, \"name\": \"Kashmiri Apples\", \"price\": { \"currency\": \"INR\", \"amount\" : 35.00 }, \"quantity\":  5 },\n        { \"id\": 3, \"name\": \"Papaya\", \"price\": { \"currency\": \"INR\", \"amount\" : 55.00 }, \"quantity\":  2 },\n        { \"id\": 4, \"name\": \"Mangoes\", \"price\": { \"currency\": \"INR\", \"amount\" : 900.00 }, \"quantity\":  4 }\n      ]\n    },\n    \"creditCard\" : {\n        \"number\" : \"4485 2847 2013 4093\",\n        \"holderName\" : \"Big Tester Jester\",\n        \"issuingBank\" : \"Standard Charted Bank\",\n        \"validUntil\" : \"2020-10-04T01:00:26.874+00:00\",\n        \"cvv\" : 456\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{payments_url}}/pay",
+					"host": [
+						"{{payments_url}}"
+					],
+					"path": [
+						"pay"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Payments - Bad Request Pay using Credit Card",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{payments_url}}/pay",
+					"host": [
+						"{{payments_url}}"
+					],
+					"path": [
+						"pay"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Payments - Bad Request (without CC)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"order\" : {\n      \"id\" : \"12ab-34cvn-23\",  \n      \"items\": [\n\n      ],\n      \"totalAmount\" : {\n          \"currency\" : \"INR\",\n          \"amount\" : 999.45\n      }\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{payments_url}}/pay",
+					"host": [
+						"{{payments_url}}"
+					],
+					"path": [
+						"pay"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
