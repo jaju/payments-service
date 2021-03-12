@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -61,7 +62,7 @@ import static org.mockito.Mockito.mock;
 //
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @TestPropertySource(properties = {
-        "fraud-checker.service.url = http://localhost",
+        "fraud-checker.service.host = http://localhost",
         "fraud-checker.service.port = 8080",
         "features.resiliency.latency_control.strategy = "
 })
@@ -78,8 +79,8 @@ public class DefaultFraudCheckerClientSpecsUsingWireMock {
     private final Money chargedAmount = new Money(Currency.getInstance("INR"), 1235.45d);
 //          .withRootDirectory("src/test/resources/wiremock");
     private final CreditCard validCard = new CreditCard("4485-2847-2013-4093", "Jumping Jack", "Bank of Test", new Date(), 456);
-    @Value("${fraud-checker.service.url}")
-    private String fraudCheckerServiceUrl;
+    @Value("${fraud-checker.service.host}")
+    private String fraudCheckerServiceHost;
     @Value("${fraud-checker.service.port}")
     private int fraudCheckerServicePort;
     @Autowired
@@ -174,7 +175,7 @@ public class DefaultFraudCheckerClientSpecsUsingWireMock {
     }
 
     @Test
-    public void shoutsWhenFraudCheckerServiceFails() {
+    public void shoutsWhenFraudCheckerServiceFailsToServeDueToInternalError() {
         givenThat(post(urlEqualTo("/check"))
                 .willReturn(aResponse()
                         .withStatus(500)
@@ -188,12 +189,12 @@ public class DefaultFraudCheckerClientSpecsUsingWireMock {
     @Test
     public void shoutsWhenFraudCheckerServiceIsUnreachable() {
         final RestTemplate restTemplate = mock(RestTemplate.class);
-        final URI fraudCheckUri = URI.create(fraudCheckerServiceUrl + "/ping");
+        final URI fraudCheckUri = URI.create(fraudCheckerServiceHost + "/ping");
 
         given(restTemplate.getForObject(fraudCheckUri, String.class))
                 .willThrow(new RestClientException("Unreachable!"));
 
-        final DefaultFraudCheckerClient fraudChecker = new DefaultFraudCheckerClient(fraudCheckerServiceUrl, fraudCheckerServicePort, restTemplate) {
+        final DefaultFraudCheckerClient fraudChecker = new DefaultFraudCheckerClient(fraudCheckerServiceHost, fraudCheckerServicePort, restTemplate) {
             @Override
             URI createFraudCheckUri(String path) {
                 return fraudCheckUri;
@@ -202,5 +203,29 @@ public class DefaultFraudCheckerClientSpecsUsingWireMock {
 
         // When-Then
         assertThrows(RestClientException.class, () -> fraudChecker.ping());
+    }
+
+    @Test
+    public void shoutsWhenFraudCheckerServiceFailsToValidateAnyMandatoryFieldsInThePayload() {
+        givenThat(post(urlEqualTo("/check"))
+                .willReturn(aResponse()
+                        .withStatus(400)
+                        .withBody("{\n" +
+                                "    \"validationErrors\": [\n" +
+                                "        {\n" +
+                                "            \"fieldName\": \"creditCard.cvv\",\n" +
+                                "            \"message\": \"is mandatory!\"\n" +
+                                "        },\n" +
+                                "        {\n" +
+                                "            \"fieldName\": \"creditCard.cvv\",\n" +
+                                "            \"message\": \"must have 3 digits\"\n" +
+                                "        }\n" +
+                                "    ]\n" +
+                                "}")));
+
+        // When
+        final var cardWithoutCvv = new CreditCard("4485-2847-2013-4093", "Jumping Jack", "Bank of Test", new Date(), null);
+        assertThrows(HttpClientErrorException.BadRequest.class, () ->
+                fraudCheckerClient.checkFraud(cardWithoutCvv, chargedAmount));
     }
 }
