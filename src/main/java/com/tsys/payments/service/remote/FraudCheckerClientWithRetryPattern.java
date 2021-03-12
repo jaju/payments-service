@@ -34,7 +34,7 @@ public class FraudCheckerClientWithRetryPattern implements FraudCheckerClient {
     @Autowired
     private RestTemplate restTemplate;
 
-    public FraudCheckerClientWithRetryPattern(@Value("${fraud-checker.service.url}") String hostname,
+    public FraudCheckerClientWithRetryPattern(@Value("${fraud-checker.service.host}") String hostname,
                                               @Value("${fraud-checker.service.port}") int port) {
         fraudCheckerServiceUri = URI.create(String.format("%s:%d/%s", hostname, port, "check"));
     }

@@ -30,7 +30,7 @@ public class FraudCheckerClientWithCircuitBreakerPattern implements FraudChecker
     @Autowired
     private RestTemplate restTemplate;
 
-    public FraudCheckerClientWithCircuitBreakerPattern(@Value("${fraud-checker.service.url}") String hostname,
+    public FraudCheckerClientWithCircuitBreakerPattern(@Value("${fraud-checker.service.host}") String hostname,
                                                        @Value("${fraud-checker.service.port}") int port) {
         fraudCheckerServiceUri = URI.create(String.format("%s:%d/%s", hostname, port, "check"));
     }

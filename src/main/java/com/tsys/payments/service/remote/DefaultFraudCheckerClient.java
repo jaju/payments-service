@@ -26,7 +26,7 @@ public class DefaultFraudCheckerClient implements FraudCheckerClient {
     private final String fraudCheckerServiceUrl;
 
     @Autowired
-    public DefaultFraudCheckerClient(@Value("${fraud-checker.service.url}") String hostname,
+    public DefaultFraudCheckerClient(@Value("${fraud-checker.service.host}") String hostname,
                                      @Value("${fraud-checker.service.port}") int port,
                                      RestTemplate restTemplateWithoutTimeout) {
         fraudCheckerServiceUrl = String.format("%s:%d", hostname, port);
@@ -34,7 +34,7 @@ public class DefaultFraudCheckerClient implements FraudCheckerClient {
     }
 
 
-//  public DefaultFraudCheckerClient(@Value("${fraud-checker.service.url}") String hostname,
+//  public DefaultFraudCheckerClient(@Value("${fraud-checker.service.host}") String hostname,
 //                                   @Value("${fraud-checker.service.port}") int port) {
 //    fraudCheckerServiceUri = URI.create(String.format("%s:%d/%s", hostname, port, "check"));
 //  }

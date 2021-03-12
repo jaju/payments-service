@@ -24,7 +24,7 @@ public class PaymentsConfig {
 //  @Bean
 //  @Qualifier("fraud_checker_retry")
 //  @ConditionalOnExpression("#{${features.resiliency.latency_control.strategy} eq 'retry'}")
-//  public FraudChecker withRetryStrategy(@Value("${fraud-checker.service.url}") String hostname,
+//  public FraudChecker withRetryStrategy(@Value("${fraud-checker.service.host}") String hostname,
 //                                        @Value("${fraud-checker.service.port}") int port) {
 //    return new FraudCheckerWithRetryPattern(hostname, port);
 //  }
@@ -32,7 +32,7 @@ public class PaymentsConfig {
 //  @Bean
 //  @Qualifier("fraud_checker_cb")
 //  @ConditionalOnExpression("#{${features.resiliency.latency_control.strategy} eq 'circuit_breaker'}")
-//  public FraudChecker withCircuitBreakerStrategy(@Value("${fraud-checker.service.url}") String hostname,
+//  public FraudChecker withCircuitBreakerStrategy(@Value("${fraud-checker.service.host}") String hostname,
 //                                        @Value("${fraud-checker.service.port}") int port) {
 //    return new FraudCheckerWithCircuitBreakerPattern(hostname, port);
 //  }
