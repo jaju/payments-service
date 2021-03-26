@@ -3,6 +3,7 @@ package com.tsys.payments.service.local;
 import com.tsys.payments.domain.*;
 import com.tsys.payments.repository.TransactionRepository;
 import com.tsys.payments.service.remote.FraudCheckerClient;
+import com.tsys.payments.utils.IdGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -39,16 +40,13 @@ class PaymentsServiceSpecs {
     private FraudCheckerClient fraudCheckerClient;
     @Mock
     private TransactionRepository transactionRepository;
+    @Mock
+    private IdGenerator<UUID> uuidGenerator;
     private PaymentsService paymentsService;
 
     @BeforeEach
     public void setup() {
-        paymentsService = new PaymentsService(fraudCheckerClient, transactionRepository) {
-
-            @Override
-            UUID createUUID() {
-                return uuid;
-            }
+        paymentsService = new PaymentsService(fraudCheckerClient, transactionRepository, uuidGenerator) {
 
             @Override
             Date createTransactionDate() {
@@ -62,6 +60,7 @@ class PaymentsServiceSpecs {
         // Given
         FraudStatus pass = new FraudStatus("pass");
         given(fraudCheckerClient.checkFraud(validCard, amount)).willReturn(pass);
+        given(uuidGenerator.generate()).willReturn(uuid);
 
         // When
         final Optional<TransactionReference> transactionReference = paymentsService.makePayment(new Order("TEST-ORDER-ID", List.of(
@@ -77,6 +76,7 @@ class PaymentsServiceSpecs {
         // Given
         FraudStatus fail = new FraudStatus("fail");
         given(fraudCheckerClient.checkFraud(validCard, amount)).willReturn(fail);
+        given(uuidGenerator.generate()).willReturn(uuid);
 
         // When
         final Optional<TransactionReference> transactionReference = paymentsService.makePayment(new Order("TEST-ORDER-ID", List.of(

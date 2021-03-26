@@ -6,6 +6,7 @@ import com.tsys.payments.domain.Transaction;
 import com.tsys.payments.domain.TransactionReference;
 import com.tsys.payments.repository.TransactionRepository;
 import com.tsys.payments.service.remote.FraudCheckerClient;
+import com.tsys.payments.utils.IdGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,34 +22,32 @@ public class PaymentsService {
     private static final Logger LOG = Logger.getLogger(PaymentsService.class.getName());
 
     private final FraudCheckerClient fraudCheckerClient;
-
     private final TransactionRepository transactionRepository;
+    private IdGenerator<UUID> uuidGenerator;
 
     @Autowired
-    //  @Qualifier("fraud_checker_cb")
-    //  @Qualifier("fraud_checker_retry")
-    public PaymentsService(FraudCheckerClient fraudCheckerClient, TransactionRepository transactionRepository) {
+    public PaymentsService(FraudCheckerClient fraudCheckerClient, TransactionRepository transactionRepository, IdGenerator<UUID> uuidGenerator) {
         this.fraudCheckerClient = fraudCheckerClient;
         this.transactionRepository = transactionRepository;
+        this.uuidGenerator = uuidGenerator;
     }
 
     public Optional<TransactionReference> makePayment(Order order, CreditCard creditCard) {
         final var amount = order.amount;
-        LOG.info(() -> String.format("Order Amount = %s, Total Items = %s", order.amount, order.totalItems()));
         final var transaction = fraudCheckerClient
                 .checkFraud(creditCard, amount)
-                .makeTransaction(createUUID(), createTransactionDate(), order.id, amount);
+                .makeTransaction(uuidGenerator.generate(), createTransactionDate(), order.id, amount);
 
         final var transactionReference = transaction.map(Transaction::reference);
         transaction.ifPresent(t -> transactionRepository.save(t));
+        LOG.info(() -> String.format("Total Items = %s", transactionRepository));
         return transactionReference;
     }
 
     Date createTransactionDate() {
         return Date.from(Instant.now());
     }
-
-    UUID createUUID() {
-        return UUID.randomUUID();
+    public void setUUIDGenerator(IdGenerator<UUID> uuidGenerator) {
+        this.uuidGenerator = uuidGenerator;
     }
 }
