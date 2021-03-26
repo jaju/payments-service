@@ -11,6 +11,11 @@ public class TransactionReference {
     public final Date date;
     public final String status;
 
+    @Deprecated
+    private TransactionReference() {
+        this(null, null, null);
+    }
+
     public TransactionReference(UUID id, Date date, String status) {
         this.id = id;
         this.date = date;
