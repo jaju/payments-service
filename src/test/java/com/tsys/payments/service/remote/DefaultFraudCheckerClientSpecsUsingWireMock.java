@@ -10,10 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.*;
 
 import java.net.URI;
 import java.util.Currency;
@@ -66,6 +63,7 @@ import static org.mockito.Mockito.mock;
         "fraud-checker.service.port = 8080",
         "features.resiliency.latency_control.strategy = "
 })
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 // NOTE:  Ideally I would like to take these properties and use them to set
 // the WireMock Server, however, I cannot use the @Value Spring annotation here
 // on a static field (OPTIONS in our case) Spring supports this injection only
@@ -89,11 +87,26 @@ public class DefaultFraudCheckerClientSpecsUsingWireMock {
     @BeforeAll
     public static void startFraudCheckerServer() {
         FRAUD_CHECKER_WEB_SERVICE.start();
+        while (!FRAUD_CHECKER_WEB_SERVICE.isRunning()) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @AfterAll
     public static void stopFraudCheckerServer() {
         FRAUD_CHECKER_WEB_SERVICE.stop();
+        while(FRAUD_CHECKER_WEB_SERVICE.isRunning()) {
+            System.out.print(".");
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @AfterEach
@@ -187,7 +200,15 @@ public class DefaultFraudCheckerClientSpecsUsingWireMock {
     }
 
     @Test
+    @Order(Integer.MAX_VALUE) // Run this last as we stop the WireMock server
     public void shoutsWhenFraudCheckerServiceIsUnreachable() {
+        stopFraudCheckerServer();
+        assertThrows(ResourceAccessException.class, () -> fraudCheckerClient.checkFraud(validCard, chargedAmount));
+    }
+
+
+    @Test
+    public void shoutsWhenFraudCheckerServiceIsUnreachable2() {
         final RestTemplate restTemplate = mock(RestTemplate.class);
         final URI fraudCheckUri = URI.create(fraudCheckerServiceHost + "/ping");
 
